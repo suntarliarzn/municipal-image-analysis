@@ -30,12 +30,12 @@ This research investigates how municipal websites in **China** and the **West** 
 - **Icons** and **posters** are used more frequently on Chinese websites.
 - **Photos** and **no imagery** are more common on Western sites.
 
+![Image Type Percentage](outputs/figures/percentage_image_type.png)
 
 📈 The visual breakdown is available at: `outputs/figures/percentage_image_type.png`.
 
 ---
 
-## 📁 Project Structure
 
 ## 📁 Project Structure
 
@@ -70,7 +70,7 @@ Make sure R (≥ 4.1.0) and RStudio are installed on your machine.
 
 ```bash
 git clone https://github.com/suntarliarzn/municipal-image-analysis.git
-cd municipal-iamge-analysis
+cd municipal-image-analysis
 ```
 ### 🔄 Step 3: Restore the Reproducible Environment
 ```r

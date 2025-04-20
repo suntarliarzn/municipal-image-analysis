@@ -1,0 +1,170 @@
+---
+title: "analysis.Rmd"
+author: "Yaxing Li"
+date: "2025-04-20"
+output: html_document
+---
+
+# 1. Environment Setup
+This chunk ensures a reproducible environment using `renv`, which snapshots all package versions used in the project. This makes it easier to replicate the results in the future or on a different machine.
+```{R}
+# Install renv if not already installed
+if (!requireNamespace("renv", quietly = TRUE)) {
+  install.packages("renv")
+}
+# Initialize renv in the project (creates env/renv/ and renv.lock)
+renv::init(bare = TRUE)
+
+# Install required packages
+renv::install(c(
+  "tidyverse",    # data manipulation and ggplot2
+  "broom",        # tidy statistical test outputs
+  "reshape2",     # for data reshaping
+  "gmodels",      # for cross-tabulations and statistics
+  "lsr",           # useful stats helpers
+  "RColorBrewer",   # color palettes for visualization
+  "readr"          # reading CSV and delimited files
+))
+
+# Snapshot the environment to lockfile (env/renv/ and renv.lock)
+renv::snapshot()
+```
+
+# 2. Load Required Libraries
+```{R}
+# Load required libraries
+library(tidyverse)
+library(broom)
+library(reshape2)
+library(gmodels)
+library(lsr)
+library(readr)
+```
+
+# 3. Read the Datasets
+This study compares 100 Chinese and 100 Western municipal websites. Two CSV files contain the image usage frequencies categorized by image types.
+```{R import-data}
+West_data<- read_csv("../data/2.2.4.1 West image type.csv")
+head(West_data)
+China_data<- read_csv("../data/2.2.4.2 Chinese image type.csv")
+head(China_data)
+```
+
+# 4. Prepare Combined Dataset
+This block selects image-related variables and merges both groups into one dataset, adding a 'Group' label.
+```{r prepare-image-type-data}
+# Define image type columns
+image_cols <- c("Drawing", "Icon", "Logo", "None of above", "Photo", "Poster", "Qr code")
+
+# Select and tag China data
+china_images <- China_data %>%
+  select(all_of(image_cols)) %>%
+  mutate(Group = "China")
+
+# Select and tag Western data
+west_images <- West_data %>%
+  select(all_of(image_cols)) %>%
+  mutate(Group = "West")
+
+# Combine the two datasets
+combined_images <- bind_rows(china_images, west_images)
+
+# Preview combined data
+head(combined_images)
+```
+# 5. Visualize Image Type Distribution
+This figure shows the relative proportion of each image type used within Chinese and Western websites.
+```{r image-type-plot, message=FALSE, warning=FALSE}
+
+# Sum image types per group
+image_type_totals <- combined_images %>%
+  group_by(Group) %>%
+  summarise(across(everything(), ~ sum(.x, na.rm = TRUE))) 
+
+# Calculate total number of images per group
+image_type_totals <- image_type_totals %>%
+  rowwise() %>%
+  mutate(total_images = sum(c_across(-Group))) %>%
+  ungroup()
+
+# Convert image counts to proportions within each group
+image_type_prop <- image_type_totals %>%
+  mutate(across(-c(Group, total_images), ~ round(.x / total_images * 100, 2)))
+
+# Reshape for plotting
+image_type_prop_long <- image_type_prop %>%
+  select(-total_images) %>%
+  pivot_longer(-Group, names_to = "ImageType", values_to = "Percentage")
+
+# Flip the order of 'Group' (make 'West' appear first and 'China' second)
+image_type_prop_long$Group <- factor(image_type_prop_long$Group, levels = c("West", "China"))
+
+# Create the plot object first
+plot <- ggplot(data = image_type_prop_long, aes(x = Group, y = Percentage, fill = ImageType)) +
+  geom_bar(stat = "identity", position = "stack", color = "black", width = 0.7, size = 0.25) +
+  scale_fill_brewer(palette = "Set1") +
+  theme_classic() +
+  labs(
+    x = "Group",
+    y = "Percentage of Total Images",
+    fill = "Image Type",
+    title = "Relative Frequency of Image Types by Group"
+  )
+
+# Print the plot to view it
+print(plot)
+
+# Save the plot to the outputs/figures folder
+ggsave(
+  filename = "../outputs/figures/percentage_image_type.png",
+  plot = plot,      # specify the plot object
+  dpi = 300,
+  width = 8,
+  height = 6
+)
+
+```
+# 6. Chi-Square Analysis: Image Type Distribution
+This analysis statistically compares how image types differ between Chinese and Western websites.
+
+```{r Chi-square-test}
+
+# Summarize image counts per group
+West_image_type <- West_data %>% select(image_cols) %>% summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
+China_image_type <- China_data %>% select(image_cols) %>% summarise(across(everything(), ~ sum(.x, na.rm = TRUE)))
+
+image_type <- data.matrix(rbind(West = West_image_type, China = China_image_type))
+image_type_prop <- round(prop.table(image_type, 1), 2)
+
+# Chi-square test
+chisq_result <- chisq.test(image_type)
+print(chisq_result)
+
+# Cramér's V (effect size)
+cramersV_value <- cramersV(image_type)
+print(paste("Cramér's V value:", round(cramersV_value, 3)))
+
+# Save CrossTable to text
+cross_table_result <- capture.output(
+  CrossTable(image_type,
+             chisq = TRUE,
+             expected = TRUE,
+             asresid = TRUE,
+             format = "SPSS")
+)
+
+# Save statistical summaries
+chi_square_summary <- tibble(
+  Chi_Square_Statistic = chisq_result$statistic,
+  Degrees_of_Freedom = chisq_result$parameter,
+  P_Value = chisq_result$p.value,
+  Cramers_V = cramersV_value
+)
+
+print(chi_square_summary)
+
+# Ensure output folder exists and save files
+dir.create("../outputs/tables", recursive = TRUE, showWarnings = FALSE)
+write.csv(chi_square_summary, file = "../outputs/tables/chi_square_summary.csv", row.names = FALSE)
+writeLines(cross_table_result, "../outputs/tables/crosstable_result.txt")
+```

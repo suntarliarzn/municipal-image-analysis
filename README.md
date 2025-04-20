@@ -79,7 +79,7 @@ renv::restore()
 ```
 
 ### 🧮 Step 4: Run the Analysis
-Open the RStudio project `municipal-image-analysis.Rproj`
+Open the RStudio project `municipal-image-analysis.Rproj` \
 Then open and run: `R script/analysis.Rmd`
 
 All visual and statistical outputs will be saved under the `outputs/` directory.

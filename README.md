@@ -6,6 +6,16 @@ This repository reproduces the data analysis and visualization from the followin
 
 ---
 
+## ⚡ Quick Start
+
+1. Clone this repo and open `municipal-image-analysis.Rproj`
+2. Run `renv::restore()` to install the correct packages
+3. Open `R script/analysis.Rmd` and click **Knit**
+
+🎉 Output files will be saved in `outputs/`
+
+---
+
 ## 🧪 Research Overview
 
 This research investigates how municipal websites in **China** and the **West** use visual imagery differently. It compares **seven types of images** across 100 Chinese and 100 Western municipal homepages.
@@ -91,5 +101,16 @@ PhD Researcher, University of Twente\
 📧 yaxing.li@utwente.nl\
 🌐 ORCID: 0000-0002-6750-8429
 
+## 📚 Citation
+
+If you use this code or reproduce results, please cite:
+
+Li, Y., Karreman, J., & de Jong, M. (2024). *Looks matter! A Comparative Analysis of Image Use on Chinese and Western Municipal Websites.* IEEE ProComm, 59–66. https://doi.org/10.1109/ProComm61427.2024.00018
+
+## 🚧 Known Limitations
+
+- The dataset includes only homepage images from 2022.
+- Only municipal-level sites were considered.
+- Future research could include mobile/responsive design comparison.
 
 <!--EndFragment-->
